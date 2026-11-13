@@ -1,0 +1,25 @@
+# Python virtual environments
+.venv/
+venv/
+myenvv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Local environment files
+.env
+.env.*
+Main App/.env
+Main App/data.db
+
+# Streamlit secrets
+Main App/.streamlit/
+.streamlit/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
