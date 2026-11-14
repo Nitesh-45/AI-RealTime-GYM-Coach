@@ -71,10 +71,11 @@ class VoicePipeline:
         is_major_issue = event in ["workout_started", "set_completed", "workout_completed"]
 
         if not is_major_issue:
-            if not issue:
+            if not issue and event != "ongoing_form_check":
                 return None
-            
-            if now - self.last_spoken_at < 5:
+
+            cooldown = 5 if issue else 12
+            if now - self.last_spoken_at < cooldown:
                 return None
             
         text = self.llm.give_feedback(event, issue)

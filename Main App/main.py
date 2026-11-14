@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import time
 import pandas as pd
+from dotenv import load_dotenv
 from services.auth.login_wall import render_login_wall
 from services.state.session_defaults import initial_session_defaults
 from services.config.workout_config import EXERCISE_OPTIONS
@@ -11,7 +12,7 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from services.vision.exercise_video_processor import VideoProcessorClass
 from services.tracking.metrics import sync_metrics_update
 from services.persistence.exercise_repository import get_users_exercises
-from groq import Groq
+from google import genai
 from services.coaching.llm import LLMCoach
 from services.coaching.tts import TextToSpeech
 from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
@@ -35,24 +36,28 @@ def main():
 
     initial_session_defaults()
 
-    if "voice_pipeline" not in st.session_state:
-        try:
-            api_key = os.environ.get("GROQ_API_KEY", "")
+    if not st.session_state.get("voice_pipeline"):
+        load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+        api_key = os.environ.get("GEMINI_API_KEY", "")
 
-            if not api_key and hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
-                api_key = st.secrets["GROQ_API_KEY"]
-            
-            groq_client = Groq(api_key=api_key)
-            llm_coach = LLMCoach(groq_client)
+        if not api_key and hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            api_key = st.secrets["GEMINI_API_KEY"]
+
+        if api_key:
+            gemini_client = genai.Client(api_key=api_key)
+            llm_coach = LLMCoach(gemini_client)
             tts = TextToSpeech()
             st.session_state.voice_pipeline = VoicePipeline(llm_coach, tts)
-        except Exception as e:
+        else:
             st.session_state.voice_pipeline = None
+
+    if not st.session_state.voice_pipeline:
+        st.warning("AI voice coaching is unavailable. Set GEMINI_API_KEY in Main App/.env or Streamlit secrets.")
 
     workout_started = st.session_state.get("workout_started", False)
     
     with st.sidebar:
-        st.title("🏋️‍♂️ Apna AI Coach")
+        st.title("🏋️‍♂️AI Coach")
 
         if st.session_state.username:
             st.caption(f"👤 Login as {st.session_state.username}")
